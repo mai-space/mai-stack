@@ -1,0 +1,51 @@
+agents:
+  - id: cursor-claude
+    type: cursor
+    model_provider: anthropic
+    model: claude-sonnet-4-6
+    task_types: [code, refactor, review]
+    max_concurrent_tasks: 2
+    budget:
+      daily_usd: 5.00
+      per_task_usd: 0.50
+    rate_limit:
+      requests_per_minute: 10
+      on_429: exponential_backoff
+      on_budget_90pct: graceful_shutdown
+
+  - id: opencode-cheap
+    type: opencode
+    model_provider: openai
+    model: gpt-4o-mini
+    task_types: [boilerplate, docs, tests]
+    max_concurrent_tasks: 3
+    budget:
+      daily_usd: 2.00
+    rate_limit:
+      requests_per_minute: 30
+      on_429: sleep_30s
+
+  - id: opencode-smart
+    type: opencode
+    model_provider: openai
+    model: o3
+    task_types: [architecture, hard-bugs]
+    max_concurrent_tasks: 1
+    budget:
+      daily_usd: 15.00
+      per_task_usd: 3.00
+    rate_limit:
+      requests_per_minute: 5
+      on_429: exponential_backoff
+
+  - id: junie
+    type: junie
+    model_provider: anthropic
+    model: claude-opus-4-7
+    task_types: [planning, architecture, review]
+    max_concurrent_tasks: 1
+    budget:
+      daily_usd: 10.00
+    rate_limit:
+      requests_per_minute: 5
+      on_budget_90pct: graceful_shutdown

@@ -1,0 +1,21 @@
+projects:
+  - id: app-a
+    name: "App A"
+    workspace: /workspaces/app-a
+    agents_md: /workspaces/app-a/AGENTS.md
+    system_prompt_override: |
+      This project uses Remix with a Postgres backend.
+      Always check db/schema.ts before touching any data layer.
+    allowed_agents: [cursor-claude, opencode-cheap]
+    embedding:
+      model: ollama:nomic-embed-text
+      reindex_threshold_minutes: 15
+
+  - id: app-b
+    name: "App B"
+    workspace: /workspaces/app-b
+    agents_md: /workspaces/app-b/AGENTS.md
+    allowed_agents: [opencode-smart, junie]
+    embedding:
+      model: openai:text-embedding-3-small
+      reindex_threshold_minutes: 30
