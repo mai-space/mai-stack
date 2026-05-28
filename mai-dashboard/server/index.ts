@@ -22,7 +22,9 @@ async function main(): Promise<void> {
 
   app.addHook('preHandler', async (request, reply) => {
     const path = request.url.split('?')[0];
-    if (path.startsWith('/auth/') || path === '/health') return;
+    // Static bundle (JS/CSS) must load unauthenticated so the SPA can render
+    // its login screen; auth still protects /api and /ws below.
+    if (path.startsWith('/auth/') || path === '/health' || path.startsWith('/assets/')) return;
     if (!process.env.DASHBOARD_SECRET) return;
     const token = getSessionToken(request);
     if (!verifyToken(token)) {
