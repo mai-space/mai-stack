@@ -13,6 +13,9 @@ interface Task {
   status: string;
   priority: number;
   parent_task_id: string | null;
+  blocker_type: string | null;
+  blocker_payload: string;
+  blocker_resolved_at: string | null;
 }
 
 interface Project {
@@ -196,6 +199,32 @@ export async function assembleManifest(task: Task, agentId: string, staleWarning
       lines.push(`• ${m.created_at.slice(0, 10)}: ${m.value}`);
     }
     lines.push('');
+  }
+
+  if (task.blocker_resolved_at) {
+    try {
+      const bp = JSON.parse(task.blocker_payload ?? '{}') as Record<string, unknown>;
+      lines.push('═══ PRIOR RESOLUTION ═══════════════════════════════════════════');
+      if (task.blocker_type === 'DECISION') {
+        lines.push('This task was previously blocked on a DECISION. A human has responded.');
+        if (bp.question) lines.push(`Question: "${bp.question}"`);
+        if (Array.isArray(bp.options)) lines.push(`Options were: ${(bp.options as string[]).join(', ')}`);
+        if (bp.choice) lines.push(`Human chose: "${bp.choice}"`);
+        lines.push('Proceed accordingly — do not ask again.');
+      } else if (task.blocker_type === 'CLARIFICATION') {
+        lines.push('This task was previously blocked on a CLARIFICATION. A human has responded.');
+        if (bp.question) lines.push(`Question: "${bp.question}"`);
+        if (bp.response) lines.push(`Human response: "${bp.response}"`);
+        lines.push('The task description has been updated with this context. Proceed accordingly.');
+      } else if (task.blocker_type === 'RISK') {
+        const decision = bp.approved ? 'APPROVED' : 'REJECTED';
+        lines.push(`This task was previously blocked on a RISK review. Human decision: ${decision}.`);
+        if (bp.description) lines.push(`Risk: "${bp.description}"`);
+        if (bp.notes) lines.push(`Notes: "${bp.notes}"`);
+        lines.push('Proceed accordingly.');
+      }
+      lines.push('');
+    } catch { /* ignore parse errors */ }
   }
 
   lines.push('═══ IF YOU CANNOT PROCEED ══════════════════════════════════════');
