@@ -26,7 +26,7 @@ async function main() {
   });
 
   await healthRoutes(app);
-  await projectRoutes(app, db);
+  await projectRoutes(app, db, redis);
   await taskRoutes(app, db, redis);
 
   const mcpServer = createMcpServer(db, redis);

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Task, TaskStatus } from '../types.js';
-import { fetchProjectTasks } from '../api.js';
+import { fetchProjectTasks, bulkCloseBlocked } from '../api.js';
 import { useWsEvents } from '../ws.js';
 import TaskCard from '../components/TaskCard.js';
 
@@ -17,6 +17,7 @@ export default function ProjectKanban() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [bulkClosing, setBulkClosing] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -29,6 +30,19 @@ export default function ProjectKanban() {
       setLoading(false);
     }
   }, [id]);
+
+  async function handleBulkClose() {
+    if (!id) return;
+    setBulkClosing(true);
+    try {
+      await bulkCloseBlocked(id);
+      await load();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBulkClosing(false);
+    }
+  }
 
   useEffect(() => { void load(); }, [load]);
 
@@ -49,6 +63,7 @@ export default function ProjectKanban() {
       <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Link to="/" style={{ color: 'var(--muted)', fontSize: 14 }}>← Projects</Link>
         <span>{id}</span>
+        <Link to={`/graph/${id}`} style={{ color: 'var(--muted)', fontSize: 13, marginLeft: 8 }}>View Graph →</Link>
       </h1>
       <div className="kanban">
         {COLUMNS.map(({ status, label }) => {
@@ -57,7 +72,22 @@ export default function ProjectKanban() {
             <div key={status} className="column">
               <div className="column-header">
                 <span>{label}</span>
-                <span>{col.length}</span>
+                {status === 'BLOCKED' && col.some(t => t.blocker_type && t.blocker_type !== 'SUBTASK') ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{col.length}</span>
+                    <button
+                      className="btn-muted"
+                      style={{ fontSize: 10, padding: '2px 8px' }}
+                      disabled={bulkClosing}
+                      onClick={() => void handleBulkClose()}
+                      title="Close all non-SUBTASK blocked tasks"
+                    >
+                      {bulkClosing ? '…' : 'Close all'}
+                    </button>
+                  </div>
+                ) : (
+                  <span>{col.length}</span>
+                )}
               </div>
               <div className="column-body">
                 {col.length === 0

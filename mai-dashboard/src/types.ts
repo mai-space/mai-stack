@@ -59,3 +59,8 @@ export interface WsEvent {
   channel: string;
   payload: Record<string, unknown>;
 }
+
+export interface AuthState {
+  authenticated: boolean;
+  loading: boolean;
+}

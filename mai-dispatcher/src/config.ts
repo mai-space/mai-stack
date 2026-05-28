@@ -9,6 +9,7 @@ const AgentProfileSchema = z.object({
   model: z.string(),
   task_types: z.array(z.string()),
   max_concurrent_tasks: z.number().int(),
+  project_affinity: z.array(z.string()).optional(),
   budget: z.object({
     daily_usd: z.number(),
     per_task_usd: z.number().optional(),

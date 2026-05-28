@@ -5,6 +5,7 @@ agents:
     model: claude-sonnet-4-6
     task_types: [code, refactor, review]
     max_concurrent_tasks: 2
+    project_affinity: [app-a]
     budget:
       daily_usd: 5.00
       per_task_usd: 0.50

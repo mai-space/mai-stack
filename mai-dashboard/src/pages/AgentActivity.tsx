@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AgentStatus } from '../types.js';
-import { fetchAgents } from '../api.js';
+import { fetchAgents, resumeAgent } from '../api.js';
 
 function stateClass(state: string): string {
   if (state === 'IDLE') return 'state-idle';
@@ -23,6 +23,7 @@ export default function AgentActivity() {
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [resuming, setResuming] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -32,6 +33,18 @@ export default function AgentActivity() {
       setError(String(e));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResume(agentId: string) {
+    setResuming(agentId);
+    try {
+      await resumeAgent(agentId);
+      await load();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setResuming(null);
     }
   }
 
@@ -59,6 +72,7 @@ export default function AgentActivity() {
                   <th>State</th>
                   <th>Budget used</th>
                   <th>Active tasks</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,6 +90,18 @@ export default function AgentActivity() {
                       </div>
                     </td>
                     <td>{a.active_tasks ?? 0}</td>
+                    <td>
+                      {a.state === 'HARD_PAUSE' && (
+                        <button
+                          className="btn-muted"
+                          disabled={resuming === a.id}
+                          onClick={() => void handleResume(a.id)}
+                          style={{ fontSize: 11 }}
+                        >
+                          {resuming === a.id ? 'Resuming…' : 'Resume'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

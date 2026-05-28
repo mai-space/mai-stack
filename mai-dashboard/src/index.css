@@ -130,3 +130,22 @@ nav {
 
 @media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .kanban { grid-template-columns: 1fr; } }
+
+/* Login page */
+.login-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 32px; width: 340px; display: flex; flex-direction: column; gap: 16px;
+}
+.login-brand { font-size: 28px; font-weight: 700; color: var(--text); text-align: center; letter-spacing: -0.5px; }
+.login-subtitle { color: var(--muted); font-size: 13px; text-align: center; }
+.login-btn { width: 100%; padding: 10px; font-size: 14px; }
+
+/* Dependency graph page */
+.graph-container {
+  height: 70vh; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; background: var(--surface);
+}
