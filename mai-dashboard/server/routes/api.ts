@@ -172,4 +172,61 @@ export const apiRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
     }
   });
+
+  app.post('/projects', async (req, reply) => {
+    const body = req.body as { id?: string; name?: string; workspace_path?: string; description?: string };
+    if (!body.id?.trim() || !body.name?.trim() || !body.workspace_path?.trim()) {
+      return reply.status(400).send({ error: 'id, name, and workspace_path are required' });
+    }
+
+    const payload = {
+      id: body.id.trim(),
+      name: body.name.trim(),
+      workspace_path: body.workspace_path.trim(),
+    };
+
+    try {
+      const registryRes = await fetch(`${REGISTRY_URL}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const registryData: unknown = await registryRes.json();
+      if (!registryRes.ok) return reply.status(registryRes.status).send(registryData);
+
+      const mcpRes = await fetch(`${PROJECT_MCP_URL}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: payload.id,
+          name: payload.name,
+          description: body.description?.trim() || undefined,
+        }),
+      });
+      const mcpData: unknown = await mcpRes.json();
+      if (!mcpRes.ok) {
+        await fetch(`${REGISTRY_URL}/projects/${payload.id}`, { method: 'DELETE' });
+        return reply.status(mcpRes.status).send(mcpData);
+      }
+
+      return reply.status(201).send(registryData);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
+
+  app.post<{ Params: { projectId: string } }>('/projects/:projectId/tasks', async (req, reply) => {
+    const { projectId } = req.params;
+    try {
+      const res = await fetch(`${PROJECT_MCP_URL}/projects/${projectId}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body),
+      });
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
 };

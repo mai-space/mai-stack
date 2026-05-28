@@ -4,6 +4,7 @@ import type { Task, TaskStatus } from '../types.js';
 import { fetchProjectTasks, bulkCloseBlocked } from '../api.js';
 import { useWsEvents } from '../ws.js';
 import TaskCard from '../components/TaskCard.js';
+import AddTaskForm from '../components/AddTaskForm.js';
 
 const COLUMNS: { status: TaskStatus; label: string }[] = [
   { status: 'OPEN', label: 'Open' },
@@ -90,7 +91,10 @@ export default function ProjectKanban() {
                 )}
               </div>
               <div className="column-body">
-                {col.length === 0
+                {status === 'OPEN' && id && (
+                  <AddTaskForm projectId={id} onCreated={() => void load()} />
+                )}
+                {col.length === 0 && status !== 'OPEN'
                   ? <div className="empty" style={{ padding: '12px 0' }}>—</div>
                   : col.map(t => <TaskCard key={t.id} task={t} />)
                 }

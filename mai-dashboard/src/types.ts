@@ -27,6 +27,19 @@ export interface ProjectSummary {
   escalations: number;
 }
 
+export interface CreateProjectInput {
+  id: string;
+  name: string;
+  workspace_path: string;
+  description?: string;
+}
+
+export interface CreateTaskInput {
+  title: string;
+  description?: string;
+  priority?: number;
+}
+
 export interface Escalation {
   task_id: string;
   task_title: string;

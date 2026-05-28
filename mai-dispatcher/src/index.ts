@@ -33,8 +33,7 @@ async function main(): Promise<void> {
   await healthRoutes(app);
   await agentRoutes(app);
 
-  const mcpServer = createMcpServer(redis);
-  registerMcpTransport(app, mcpServer);
+  registerMcpTransport(app, () => createMcpServer(redis));
 
   await app.listen({ port: PORT, host: '0.0.0.0' });
   console.log(`mai-dispatcher listening on port ${PORT}`);

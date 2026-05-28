@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { ProjectSummary } from '../types.js';
 import { fetchOverview } from '../api.js';
 import { useWsEvents } from '../ws.js';
+import CreateProjectForm from '../components/CreateProjectForm.js';
 
 export default function Overview() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -31,7 +32,10 @@ export default function Overview() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Projects</h1>
+      <div className="page-header">
+        <h1 className="page-title">Projects</h1>
+        <CreateProjectForm onCreated={() => void load()} />
+      </div>
       {projects.length === 0 && <div className="empty">No projects registered yet.</div>}
       <div className="grid">
         {projects.map((p) => (

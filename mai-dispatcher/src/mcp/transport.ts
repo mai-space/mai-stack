@@ -2,15 +2,21 @@ import type { FastifyInstance } from 'fastify';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-export function registerMcpTransport(app: FastifyInstance, server: McpServer): void {
+export function registerMcpTransport(
+  app: FastifyInstance,
+  createServer: () => McpServer,
+): void {
   const transports = new Map<string, SSEServerTransport>();
 
   app.get('/sse', async (request, reply) => {
     const transport = new SSEServerTransport('/messages', reply.raw);
     transports.set(transport.sessionId, transport);
 
+    const server = createServer();
+
     reply.raw.on('close', () => {
       transports.delete(transport.sessionId);
+      void server.close();
     });
 
     await server.connect(transport);

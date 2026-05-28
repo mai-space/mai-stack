@@ -1,4 +1,7 @@
-import type { ProjectSummary, Escalation, AgentStatus, Task } from './types.js';
+import type {
+  ProjectSummary, Escalation, AgentStatus, Task,
+  CreateProjectInput, CreateTaskInput,
+} from './types.js';
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -86,4 +89,12 @@ export function resumeAgent(agentId: string): Promise<{ resumed: boolean; previo
     `/api/agents/${agentId}/resume`,
     {}
   );
+}
+
+export function createProject(input: CreateProjectInput): Promise<{ id: string; name: string }> {
+  return post<{ id: string; name: string }>('/api/projects', input);
+}
+
+export function createTask(projectId: string, input: CreateTaskInput): Promise<Task> {
+  return post<Task>(`/api/projects/${projectId}/tasks`, input);
 }
