@@ -4,7 +4,7 @@ agents:
     model_provider: anthropic
     model: claude-sonnet-4-6
     task_types: [code, refactor, review, planning, architecture, hard-bugs]
-    max_concurrent_tasks: 2
+    max_concurrent_tasks: 4
     project_affinity: [bgm-pulheim]
     budget:
       daily_usd: 10.00
@@ -19,7 +19,7 @@ agents:
     model_provider: opencode-go
     model: deepseek-v4-pro
     task_types: [code, refactor, hard-bugs, architecture]
-    max_concurrent_tasks: 2
+    max_concurrent_tasks: 6
     project_affinity: [bgm-pulheim]
     budget:
       daily_usd: 5.00
@@ -32,7 +32,7 @@ agents:
     model_provider: opencode-go
     model: qwen3.5-plus
     task_types: [boilerplate, docs, tests, code]
-    max_concurrent_tasks: 3
+    max_concurrent_tasks: 6
     project_affinity: [bgm-pulheim]
     budget:
       daily_usd: 3.00

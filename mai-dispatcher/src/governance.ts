@@ -6,6 +6,7 @@ type RedisClient = ReturnType<typeof createClient>;
 export type AgentState = 'IDLE' | 'WORKING' | 'BACKING_OFF' | 'GRACEFUL_SHUTDOWN' | 'HARD_PAUSE';
 
 const STATE_TTL = 48 * 3600;
+const CONCURRENCY_TTL = 3600; // 1h safety-net so abandoned claims don't leak forever
 
 function dateStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -117,6 +118,11 @@ export async function recordClaim(
     await redis.expire(providerKey(profile.model_provider), STATE_TTL);
   }
   await redis.incr(concurrencyKey(agentId));
+  // Safety-net TTL (refreshed on each claim): if an agent abandons a claim
+  // without calling complete_task (crash, lease expiry), the counter would
+  // otherwise leak forever and permanently block the agent. Self-heals once
+  // the agent goes idle for CONCURRENCY_TTL.
+  await redis.expire(concurrencyKey(agentId), CONCURRENCY_TTL);
   await setAgentState(redis, agentId, 'WORKING');
 }
 
