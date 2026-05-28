@@ -142,4 +142,34 @@ export const apiRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
     }
   });
+
+  app.post<{ Params: { projectId: string } }>('/projects/:projectId/bulk-close-blocked', async (req, reply) => {
+    const { projectId } = req.params;
+    try {
+      const res = await fetch(`${PROJECT_MCP_URL}/projects/${projectId}/bulk-close-blocked`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body ?? {}),
+      });
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
+
+  app.post<{ Params: { agentId: string } }>('/agents/:agentId/resume', async (req, reply) => {
+    const { agentId } = req.params;
+    try {
+      const res = await fetch(`${DISPATCHER_URL}/agents/${agentId}/resume`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
 };

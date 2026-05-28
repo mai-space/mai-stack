@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { getAgentProfiles } from '../config.js';
-import { getBudgetStatus } from '../governance.js';
+import { getBudgetStatus, getAgentState, setAgentState } from '../governance.js';
 import { getRedis } from '../redis.js';
 
 export async function agentRoutes(app: FastifyInstance): Promise<void> {
@@ -12,5 +12,24 @@ export async function agentRoutes(app: FastifyInstance): Promise<void> {
     if (!profile) return reply.status(404).send({ error: 'Agent not found' });
     const redis = await getRedis();
     return getBudgetStatus(redis, profile);
+  });
+
+  app.post('/agents/:agentId/resume', async (request, reply) => {
+    const { agentId } = request.params as { agentId: string };
+    const profile = getAgentProfiles().find(p => p.id === agentId);
+    if (!profile) return reply.status(404).send({ error: 'Agent not found' });
+
+    const redis = await getRedis();
+    const state = await getAgentState(redis, agentId);
+
+    if (state !== 'HARD_PAUSE') {
+      return reply.status(409).send({
+        error: 'Agent is not in HARD_PAUSE state',
+        current_state: state,
+      });
+    }
+
+    await setAgentState(redis, agentId, 'IDLE');
+    return { agent_id: agentId, resumed: true, previous_state: 'HARD_PAUSE', new_state: 'IDLE' };
   });
 }

@@ -89,6 +89,22 @@ export function registerTaskTools(server: any, redis: RedisClient): void {
     async ({ project_id, agent_id }: { project_id: string; agent_id: string }) => {
       const profile = getAgentProfiles().find(p => p.id === agent_id);
 
+      // Affinity gate — runs before governance to avoid unnecessary Redis reads
+      if (profile?.project_affinity && profile.project_affinity.length > 0) {
+        if (!profile.project_affinity.includes(project_id)) {
+          return {
+            content: [{
+              type: 'text' as const,
+              text: JSON.stringify({
+                task: null,
+                reason: 'project_not_in_affinity',
+                affinity: profile.project_affinity,
+              }),
+            }],
+          };
+        }
+      }
+
       if (profile) {
         const allowedAgentIds = await fetchAllowedAgentIds(project_id);
         const gov = await checkGovernance(redis, agent_id, profile, allowedAgentIds);

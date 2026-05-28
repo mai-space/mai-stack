@@ -2,8 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import type { Kysely } from 'kysely';
 import type { Database } from '../db/schema.js';
 import { z } from 'zod';
+import { publishStateChange } from '../redis.js';
 
-export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>) {
+export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>, redis: any) {
   app.get('/projects', async () => db.selectFrom('projects').selectAll().execute());
 
   app.get('/projects/:id', async (req, reply) => {
@@ -32,6 +33,38 @@ export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>) 
     const project = await db.selectFrom('projects').select('id').where('id', '=', id).executeTakeFirst();
     if (!project) return reply.status(404).send({ error: 'Not found' });
     return db.selectFrom('tasks').selectAll().where('project_id', '=', id).orderBy('priority', 'desc').execute();
+  });
+
+  app.post('/projects/:id/bulk-close-blocked', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const project = await db.selectFrom('projects').select('id').where('id', '=', id).executeTakeFirst();
+    if (!project) return reply.status(404).send({ error: 'Not found' });
+
+    const body = z.object({
+      blocker_types: z.array(z.string()).optional(),
+    }).optional().parse(req.body ?? {});
+
+    const now = new Date().toISOString();
+    const tasks = await db.selectFrom('tasks').selectAll()
+      .where('project_id', '=', id).where('status', '=', 'BLOCKED').execute();
+
+    const types = body?.blocker_types ?? ['DECISION', 'CLARIFICATION', 'RISK', 'CAPABILITY', 'DEPENDENCY'];
+    const targets = tasks.filter(t => t.blocker_type && types.includes(t.blocker_type));
+
+    if (targets.length === 0) return { closed: 0, task_ids: [] };
+
+    const ids = targets.map(t => t.id);
+    await db.updateTable('tasks').set({ status: 'DONE', updated_at: now })
+      .where('id', 'in', ids).execute();
+
+    for (const t of targets) {
+      await publishStateChange(redis, t.id, {
+        task_id: t.id, project_id: id, from: 'BLOCKED', to: 'DONE',
+        reason: 'bulk_close', blocker_type: t.blocker_type, timestamp: now,
+      });
+    }
+
+    return { closed: ids.length, task_ids: ids };
   });
 
   app.post('/projects/:id/tasks', async (req, reply) => {

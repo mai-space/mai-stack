@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { getRedis } from './redis.js';
 import { loadAgentProfiles } from './config.js';
+import { startScheduler } from './scheduler.js';
 import { healthRoutes } from './routes/health.js';
 import { agentRoutes } from './routes/agents.js';
 import { createMcpServer } from './mcp/server.js';
@@ -18,6 +19,7 @@ async function main(): Promise<void> {
 
   const redis = await getRedis();
   loadAgentProfiles(CONFIG_PATH);
+  startScheduler(redis);
 
   const app = Fastify({ logger: { level: 'info' } });
   await app.register(cors);
