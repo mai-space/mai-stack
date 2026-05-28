@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { checkFreshness } from '../../freshness.js';
 import { assembleManifest } from '../../manifest.js';
 import { createClient } from 'redis';
+import { getAgentProfiles } from '../../config.js';
+import { checkGovernance, recordClaim, recordComplete, budgetKey, providerKey } from '../../governance.js';
 
 type RedisClient = ReturnType<typeof createClient>;
 
@@ -62,6 +64,21 @@ async function claimNextTask(projectId: string, agentId: string): Promise<Task |
   return null;
 }
 
+async function fetchAllowedAgentIds(projectId: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${REGISTRY_URL}/projects/${projectId}`);
+    if (!res.ok) return [];
+    const proj = await res.json() as { allowed_agent_ids?: unknown };
+    if (Array.isArray(proj.allowed_agent_ids)) return proj.allowed_agent_ids as string[];
+    if (typeof proj.allowed_agent_ids === 'string') {
+      try { return JSON.parse(proj.allowed_agent_ids); } catch { return []; }
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 export function registerTaskTools(server: any, redis: RedisClient): void {
   server.tool(
     'claim_task',
@@ -70,11 +87,32 @@ export function registerTaskTools(server: any, redis: RedisClient): void {
       agent_id: z.string().describe('Agent ID claiming the task'),
     },
     async ({ project_id, agent_id }: { project_id: string; agent_id: string }) => {
+      const profile = getAgentProfiles().find(p => p.id === agent_id);
+
+      if (profile) {
+        const allowedAgentIds = await fetchAllowedAgentIds(project_id);
+        const gov = await checkGovernance(redis, agent_id, profile, allowedAgentIds);
+        if (!gov.allowed) {
+          return {
+            content: [{
+              type: 'text' as const,
+              text: JSON.stringify({ task: null, reason: gov.reason, retry_after: gov.retry_after }),
+            }],
+          };
+        }
+      } else {
+        console.warn(`[governance] unknown agent "${agent_id}" — governance checks skipped`);
+      }
+
       const { staleWarning } = await checkFreshness(redis, project_id, REGISTRY_URL, CODE_MCP_URL, REINDEX_TIMEOUT_MS);
 
       const task = await claimNextTask(project_id, agent_id);
       if (!task) {
         return { content: [{ type: 'text' as const, text: JSON.stringify({ task: null, reason: 'no_tasks_available' }) }] };
+      }
+
+      if (profile) {
+        await recordClaim(redis, agent_id, profile);
       }
 
       const manifest = await assembleManifest(task, agent_id, staleWarning);
@@ -89,9 +127,28 @@ export function registerTaskTools(server: any, redis: RedisClient): void {
 
   server.tool(
     'complete_task',
-    { task_id: z.string().describe('Task ID to mark as complete') },
-    async ({ task_id }: { task_id: string }) => {
+    {
+      task_id: z.string().describe('Task ID to mark as complete'),
+      agent_id: z.string().optional().describe('Agent ID; updates budget and concurrency'),
+      cost_usd: z.number().optional().describe('Actual task cost in USD; adjusts the per_task_usd estimate'),
+    },
+    async ({ task_id, agent_id, cost_usd }: { task_id: string; agent_id?: string; cost_usd?: number }) => {
       const result = await proxyPost(`/tasks/${task_id}/complete`, {});
+
+      if (agent_id) {
+        const profile = getAgentProfiles().find(p => p.id === agent_id);
+        if (profile) {
+          if (cost_usd !== undefined && profile.budget?.per_task_usd !== undefined) {
+            const delta = cost_usd - profile.budget.per_task_usd;
+            if (delta !== 0) {
+              await redis.incrByFloat(budgetKey(agent_id), delta);
+              await redis.incrByFloat(providerKey(profile.model_provider), delta);
+            }
+          }
+          await recordComplete(redis, agent_id);
+        }
+      }
+
       return { content: [{ type: 'text' as const, text: JSON.stringify(result) }] };
     }
   );
