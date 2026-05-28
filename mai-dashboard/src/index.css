@@ -1,0 +1,132 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #273549;
+  --border: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --primary: #3b82f6;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #a855f7;
+  --teal: #14b8a6;
+}
+
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button {
+  cursor: pointer; border: none; border-radius: 6px; padding: 6px 14px;
+  font-size: 13px; font-weight: 500; transition: opacity 0.15s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+textarea, input {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); padding: 8px 12px; font-size: 13px; width: 100%;
+  resize: vertical;
+}
+textarea:focus, input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 24px; display: flex; align-items: center; gap: 4px; height: 52px;
+}
+.nav-brand { font-weight: 700; color: var(--text); margin-right: 16px; font-size: 16px; }
+.nav-link {
+  color: var(--muted); padding: 6px 12px; border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-link:hover { color: var(--text); background: var(--surface2); text-decoration: none; }
+.nav-link.active { color: var(--text); background: var(--surface2); }
+
+.page { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.page-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.card-title { font-weight: 600; font-size: 15px; }
+.card-meta { color: var(--muted); font-size: 12px; }
+
+.stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat { text-align: center; }
+.stat-value { font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.column { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.column-header {
+  padding: 10px 14px; font-weight: 600; font-size: 12px; letter-spacing: 0.06em;
+  text-transform: uppercase; border-bottom: 1px solid var(--border); color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.column-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+
+.task-card {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.task-title { font-weight: 500; font-size: 13px; }
+.task-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.task-agent { font-size: 11px; color: var(--muted); }
+.task-priority { font-size: 11px; color: var(--muted); }
+
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge-decision { background: #1d4ed8; color: #bfdbfe; }
+.badge-clarification { background: #7e22ce; color: #e9d5ff; }
+.badge-risk-low { background: #78350f; color: #fde68a; }
+.badge-risk-medium { background: #92400e; color: #fed7aa; }
+.badge-risk-high { background: #991b1b; color: #fecaca; }
+.badge-risk-critical { background: #7f1d1d; color: #fca5a5; }
+.badge-subtask { background: #1e293b; color: #94a3b8; }
+.badge-capability { background: #134e4a; color: #99f6e4; }
+.badge-dependency { background: #1c1917; color: #d6d3d1; }
+
+.state-idle { color: var(--success); }
+.state-working { color: var(--primary); }
+.state-graceful { color: var(--warning); }
+.state-hard { color: var(--danger); }
+
+.escalation-item {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.escalation-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.escalation-title { font-weight: 600; }
+.escalation-project { font-size: 12px; color: var(--muted); }
+.escalation-question { font-size: 13px; color: var(--text); }
+
+.options-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-success { background: #166534; color: #bbf7d0; }
+.btn-danger { background: #7f1d1d; color: #fecaca; }
+.btn-muted { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+.agents-table { width: 100%; border-collapse: collapse; }
+.agents-table th, .agents-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.agents-table th { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.agents-table tr:last-child td { border-bottom: none; }
+
+.budget-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; }
+.budget-fill { height: 100%; border-radius: 3px; background: var(--success); transition: width 0.3s; }
+.budget-fill.warn { background: var(--warning); }
+.budget-fill.danger { background: var(--danger); }
+
+.empty { color: var(--muted); font-size: 13px; padding: 24px; text-align: center; }
+.error-msg { color: var(--danger); padding: 12px; background: #1f0a0a; border: 1px solid #7f1d1d; border-radius: 8px; }
+.loading { color: var(--muted); padding: 24px; text-align: center; }
+
+@media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .kanban { grid-template-columns: 1fr; } }

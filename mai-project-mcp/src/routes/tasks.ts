@@ -146,6 +146,70 @@ export async function taskRoutes(app: FastifyInstance, db: Kysely<Database>, red
     return db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
   });
 
+  app.post('/tasks/:id/resolve/decision', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { choice } = z.object({ choice: z.string() }).parse(req.body);
+    const task = await db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!task) return reply.status(404).send({ error: 'Not found' });
+    if (task.status !== 'BLOCKED') return reply.status(409).send({ error: 'Task is not blocked' });
+    if (task.blocker_type !== 'DECISION') return reply.status(409).send({ error: `Task is blocked by ${task.blocker_type}, not DECISION` });
+    const now = new Date().toISOString();
+    const payload = { ...(JSON.parse(task.blocker_payload || '{}')), choice };
+    await db.updateTable('tasks').set({
+      status: 'OPEN', assigned_agent: null, lease_expires_at: null,
+      blocker_payload: JSON.stringify(payload), blocker_resolved_at: now, updated_at: now,
+    }).where('id', '=', id).execute();
+    await publishStateChange(redis, id, { task_id: id, project_id: task.project_id, from: 'BLOCKED', to: 'OPEN', blocker_type: 'DECISION', choice, timestamp: now });
+    return db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
+  });
+
+  app.post('/tasks/:id/resolve/clarification', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { response } = z.object({ response: z.string() }).parse(req.body);
+    const task = await db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!task) return reply.status(404).send({ error: 'Not found' });
+    if (task.status !== 'BLOCKED') return reply.status(409).send({ error: 'Task is not blocked' });
+    if (task.blocker_type !== 'CLARIFICATION') return reply.status(409).send({ error: `Task is blocked by ${task.blocker_type}, not CLARIFICATION` });
+    const now = new Date().toISOString();
+    const payload = { ...(JSON.parse(task.blocker_payload || '{}')), response };
+    const newDescription = (task.description ?? '') + `\n\nClarification: ${response}`;
+    await db.updateTable('tasks').set({
+      status: 'OPEN', assigned_agent: null, lease_expires_at: null,
+      description: newDescription,
+      blocker_payload: JSON.stringify(payload), blocker_resolved_at: now, updated_at: now,
+    }).where('id', '=', id).execute();
+    await publishStateChange(redis, id, { task_id: id, project_id: task.project_id, from: 'BLOCKED', to: 'OPEN', blocker_type: 'CLARIFICATION', timestamp: now });
+    return db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
+  });
+
+  app.post('/tasks/:id/resolve/risk', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const body = z.object({ approved: z.boolean(), notes: z.string().optional() }).parse(req.body);
+    const task = await db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!task) return reply.status(404).send({ error: 'Not found' });
+    if (task.status !== 'BLOCKED') return reply.status(409).send({ error: 'Task is not blocked' });
+    if (task.blocker_type !== 'RISK') return reply.status(409).send({ error: `Task is blocked by ${task.blocker_type}, not RISK` });
+    const now = new Date().toISOString();
+    const existing = JSON.parse(task.blocker_payload || '{}') as { severity?: string };
+    const payload = { ...existing, approved: body.approved, notes: body.notes };
+    const newStatus = body.approved ? 'OPEN' : 'DONE';
+    await db.updateTable('tasks').set({
+      status: newStatus, assigned_agent: null, lease_expires_at: null,
+      blocker_payload: JSON.stringify(payload), blocker_resolved_at: now, updated_at: now,
+    }).where('id', '=', id).execute();
+    if (body.approved && existing.severity === 'critical') {
+      await db.updateTable('tasks')
+        .set({ status: 'OPEN', blocker_type: null, blocker_payload: '{}', updated_at: now })
+        .where('project_id', '=', task.project_id)
+        .where('status', '=', 'BLOCKED')
+        .where('blocker_type', '=', 'RISK')
+        .where('id', '!=', id)
+        .execute();
+    }
+    await publishStateChange(redis, id, { task_id: id, project_id: task.project_id, from: 'BLOCKED', to: newStatus, blocker_type: 'RISK', approved: body.approved, timestamp: now });
+    return db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
+  });
+
   app.post('/tasks/:id/reassign', async (req, reply) => {
     const { id } = req.params as { id: string };
     const body = z.object({ required_capability: z.string(), reason: z.string() }).parse(req.body);

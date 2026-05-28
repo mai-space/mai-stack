@@ -151,6 +151,31 @@ services:
       timeout: 5s
       retries: 5
 
+  mai-dashboard:
+    build: ./mai-dashboard
+    restart: unless-stopped
+    ports: ["3461:3461"]
+    environment:
+      PORT: 3461
+      REGISTRY_URL: http://mai-registry:3459
+      PROJECT_MCP_URL: http://mai-project-mcp:3456
+      DISPATCHER_URL: http://mai-dispatcher:3460
+      REDIS_URL: redis://redis:6379
+      DASHBOARD_SECRET: ${DASHBOARD_SECRET:-changeme}
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+      mai-registry:
+        condition: service_healthy
+      mai-dispatcher:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3461/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   redis-data:
   qdrant-data:
