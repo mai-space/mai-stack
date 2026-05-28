@@ -1,11 +1,14 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { z } from 'zod';
 import { getQdrantClient } from './qdrant.js';
 import { syncWithRegistry } from './registrySync.js';
 import { createMcpServer } from './mcp/server.js';
 import { registerMcpTransport } from './mcp/transport.js';
 import { fetchProject } from './registry.js';
 import { indexProject, getJobStatus } from './indexer.js';
+import { createEmbedder } from './embeddings/index.js';
+import { searchChunks } from './qdrant.js';
 
 const PORT = parseInt(process.env.PORT ?? '3457', 10);
 const REGISTRY_URL = process.env.REGISTRY_URL ?? 'http://mai-registry:3459';
@@ -33,6 +36,19 @@ async function main() {
   app.get('/reindex/:projectId/status', async (req, reply) => {
     const { projectId } = req.params as { projectId: string };
     return { project_id: projectId, status: getJobStatus(projectId) };
+  });
+
+  app.post('/search/:projectId', async (req, reply) => {
+    const { projectId } = req.params as { projectId: string };
+    const body = z.object({
+      query: z.string(),
+      top_k: z.number().int().min(1).max(20).optional(),
+    }).parse(req.body);
+    const project = await fetchProject(REGISTRY_URL, projectId);
+    if (!project) return reply.status(404).send({ error: 'Project not found in registry' });
+    const embedder = await createEmbedder(project.embedding_model);
+    const [vector] = await embedder.embed([body.query]);
+    return searchChunks(qdrant, projectId, vector, body.top_k ?? 5);
   });
 
   const mcpServer = createMcpServer(qdrant);

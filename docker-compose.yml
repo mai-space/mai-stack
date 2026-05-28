@@ -83,6 +83,74 @@ services:
       mai-registry:
         condition: service_healthy
 
+  mai-watcher:
+    build: ./mai-watcher
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      REGISTRY_URL: http://mai-registry:3459
+      DEBOUNCE_MS: ${WATCHER_DEBOUNCE_MS:-5000}
+      USE_POLLING: ${WATCHER_USE_POLLING:-false}
+      POLLING_INTERVAL_MS: ${WATCHER_POLLING_INTERVAL_MS:-2000}
+    volumes:
+      - ${WORKSPACES_PATH:-/tmp/workspaces}:/workspaces:ro
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+      mai-registry:
+        condition: service_healthy
+
+  mai-memory-mcp:
+    build: ./mai-memory-mcp
+    restart: unless-stopped
+    environment:
+      PORT: 3458
+      REDIS_URL: redis://redis:6379
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3458/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mai-dispatcher:
+    build: ./mai-dispatcher
+    restart: unless-stopped
+    ports: ["3460:3460"]
+    environment:
+      PORT: 3460
+      REDIS_URL: redis://redis:6379
+      REGISTRY_URL: http://mai-registry:3459
+      PROJECT_MCP_URL: http://mai-project-mcp:3456
+      CODE_MCP_URL: http://mai-code-mcp:3457
+      MEMORY_MCP_URL: http://mai-memory-mcp:3458
+      CONFIG_PATH: /config/agents.yml
+      REINDEX_TIMEOUT_MS: ${REINDEX_TIMEOUT_MS:-30000}
+    volumes:
+      - ./config/agents.yml:/config/agents.yml:ro
+      - ${WORKSPACES_PATH:-/tmp/workspaces}:/workspaces:ro
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+      mai-registry:
+        condition: service_healthy
+      mai-project-mcp:
+        condition: service_started
+      mai-code-mcp:
+        condition: service_started
+      mai-memory-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3460/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   redis-data:
   qdrant-data:

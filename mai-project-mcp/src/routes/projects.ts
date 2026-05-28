@@ -3,11 +3,6 @@ import type { Kysely } from 'kysely';
 import type { Database } from '../db/schema.js';
 import { z } from 'zod';
 
-const CreateSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-});
-
 export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>) {
   app.get('/projects', async () => db.selectFrom('projects').selectAll().execute());
 
@@ -19,8 +14,14 @@ export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>) 
   });
 
   app.post('/projects', async (req, reply) => {
-    const body = CreateSchema.parse(req.body);
-    const id = crypto.randomUUID();
+    const body = z.object({
+      id: z.string().optional(),
+      name: z.string().min(1),
+      description: z.string().optional(),
+    }).parse(req.body);
+    const id = body.id ?? crypto.randomUUID();
+    const existing = await db.selectFrom('projects').select('id').where('id', '=', id).executeTakeFirst();
+    if (existing) return reply.status(409).send({ error: 'Project already exists' });
     const now = new Date().toISOString();
     await db.insertInto('projects').values({ id, name: body.name, description: body.description ?? null, created_at: now }).execute();
     return reply.status(201).send(await db.selectFrom('projects').selectAll().where('id', '=', id).executeTakeFirstOrThrow());
