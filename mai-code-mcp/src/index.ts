@@ -28,8 +28,7 @@ async function main() {
     const project = await fetchProject(REGISTRY_URL, projectId);
     if (!project) return reply.status(404).send({ error: 'Project not found in registry' });
 
-    const workspacePath = `/workspaces/${project.id}`;
-    indexProject(qdrant, REGISTRY_URL, projectId, workspacePath, project.embedding_model).catch(console.error);
+    indexProject(qdrant, REGISTRY_URL, projectId, project.workspace_path, project.embedding_model).catch(console.error);
     return reply.status(202).send({ status: 'accepted', project_id: projectId });
   });
 

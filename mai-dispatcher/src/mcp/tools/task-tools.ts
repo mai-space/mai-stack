@@ -23,6 +23,9 @@ interface Task {
   assigned_agent: string | null;
   lease_expires_at: string | null;
   created_at: string;
+  blocker_type: string | null;
+  blocker_payload: string;
+  blocker_resolved_at: string | null;
 }
 
 async function proxyPost(path: string, body: unknown): Promise<unknown> {

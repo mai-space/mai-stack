@@ -21,11 +21,8 @@ services:
     restart: unless-stopped
     volumes: [qdrant-data:/qdrant/storage]
     networks: [mai]
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:6333/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # NOTE: qdrant image ships no curl/wget, so an HTTP healthcheck can't run
+    # in-container. code-mcp depends on service_started and retries with backoff.
 
   mai-registry:
     build: ./mai-registry
@@ -72,14 +69,14 @@ services:
       QDRANT_URL: http://qdrant:6333
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-ollama:nomic-embed-text}
       REGISTRY_URL: http://mai-registry:3459
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      COHERE_API_KEY: ${COHERE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ${WORKSPACES_PATH:-/tmp/workspaces}:/workspaces:ro
     networks: [mai]
     depends_on:
       qdrant:
-        condition: service_healthy
+        condition: service_started
       mai-registry:
         condition: service_healthy
 

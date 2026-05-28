@@ -8,8 +8,8 @@ export interface Chunk {
   content: string;
 }
 
-const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '__pycache__', '.cache']);
-const EXCLUDED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.mp4', '.mp3', '.zip', '.tar', '.gz', '.lock', '.bin']);
+const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '__pycache__', '.cache', 'vendor', 'var', '.ddev', '.idea', 'typo3-docs']);
+const EXCLUDED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.mp4', '.mp3', '.zip', '.tar', '.gz', '.lock', '.bin', '.webp']);
 const MAX_FILE_BYTES = 200 * 1024; // 200KB
 const CHUNK_LINES = 50;
 const OVERLAP_LINES = 10;
