@@ -4,8 +4,7 @@ import type { Database } from '../db/schema.js';
 import { z } from 'zod';
 import { onTaskDone } from '../services/blocker.js';
 import { publishStateChange } from '../redis.js';
-
-const LEASE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+import { expireLeases, leaseExpiresAt } from '../services/lease.js';
 
 export async function taskRoutes(app: FastifyInstance, db: Kysely<Database>, redis: any) {
   app.get('/tasks/:id', async (req, reply) => {
@@ -35,13 +34,14 @@ export async function taskRoutes(app: FastifyInstance, db: Kysely<Database>, red
   });
 
   app.post('/tasks/:id/claim', async (req, reply) => {
+    await expireLeases(db, redis);
     const { id } = req.params as { id: string };
     const { agent_id } = z.object({ agent_id: z.string() }).parse(req.body);
     const task = await db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirst();
     if (!task) return reply.status(404).send({ error: 'Not found' });
     if (task.status !== 'OPEN') return reply.status(409).send({ error: `Task is ${task.status}` });
     const now = new Date().toISOString();
-    const leaseExpires = new Date(Date.now() + LEASE_TTL_MS).toISOString();
+    const leaseExpires = leaseExpiresAt();
     await db.updateTable('tasks').set({ status: 'IN_PROGRESS', assigned_agent: agent_id, lease_expires_at: leaseExpires, updated_at: now }).where('id', '=', id).execute();
     await publishStateChange(redis, id, { task_id: id, from: 'OPEN', to: 'IN_PROGRESS', agent_id, timestamp: now });
     return db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
@@ -81,7 +81,7 @@ export async function taskRoutes(app: FastifyInstance, db: Kysely<Database>, red
     const task = await db.selectFrom('tasks').selectAll().where('id', '=', id).executeTakeFirst();
     if (!task) return reply.status(404).send({ error: 'Not found' });
     if (task.assigned_agent !== agent_id) return reply.status(403).send({ error: 'Not your task' });
-    const leaseExpires = new Date(Date.now() + LEASE_TTL_MS).toISOString();
+    const leaseExpires = leaseExpiresAt();
     await db.updateTable('tasks').set({ lease_expires_at: leaseExpires, updated_at: new Date().toISOString() }).where('id', '=', id).execute();
     return { renewed: true, lease_expires_at: leaseExpires };
   });

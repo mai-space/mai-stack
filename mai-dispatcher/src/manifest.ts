@@ -248,7 +248,7 @@ export async function assembleManifest(task: Task, agentId: string, staleWarning
 
   lines.push('═══ YOUR TASK ══════════════════════════════════════════════════');
   lines.push(task.description ?? task.title);
-  lines.push(`Priority: ${task.priority}. Lease TTL: 5 min (use renew_lease to extend).`);
+  lines.push(`Priority: ${task.priority}. Lease TTL: 1 hour (use renew_lease to extend).`);
 
   return lines.join('\n');
 }

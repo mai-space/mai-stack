@@ -3,6 +3,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '../db/schema.js';
 import { z } from 'zod';
 import { publishStateChange } from '../redis.js';
+import { expireLeases } from '../services/lease.js';
 
 export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>, redis: any) {
   app.get('/projects', async () => db.selectFrom('projects').selectAll().execute());
@@ -32,6 +33,7 @@ export async function projectRoutes(app: FastifyInstance, db: Kysely<Database>, 
     const { id } = req.params as { id: string };
     const project = await db.selectFrom('projects').select('id').where('id', '=', id).executeTakeFirst();
     if (!project) return reply.status(404).send({ error: 'Not found' });
+    await expireLeases(db, redis);
     return db.selectFrom('tasks').selectAll().where('project_id', '=', id).orderBy('priority', 'desc').execute();
   });
 

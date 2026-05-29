@@ -3,8 +3,7 @@ import type { Database } from '../../db/schema.js';
 import { publishStateChange } from '../../redis.js';
 import { onTaskDone } from '../../services/blocker.js';
 import { z } from 'zod';
-
-const LEASE_TTL_MS = 5 * 60 * 1000;
+import { expireLeases, leaseExpiresAt } from '../../services/lease.js';
 
 export function registerTaskTools(server: any, db: Kysely<Database>, redis: any) {
   server.tool(
@@ -14,6 +13,7 @@ export function registerTaskTools(server: any, db: Kysely<Database>, redis: any)
       agent_id: z.string().describe('Agent ID claiming the task'),
     },
     async ({ project_id, agent_id }: { project_id: string; agent_id: string }) => {
+      await expireLeases(db, redis);
       const task = await db
         .selectFrom('tasks')
         .selectAll()
@@ -26,7 +26,7 @@ export function registerTaskTools(server: any, db: Kysely<Database>, redis: any)
       if (!task) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: 'No available tasks' }) }] };
 
       const now = new Date().toISOString();
-      const leaseExpires = new Date(Date.now() + LEASE_TTL_MS).toISOString();
+      const leaseExpires = leaseExpiresAt();
       await db.updateTable('tasks').set({ status: 'IN_PROGRESS', assigned_agent: agent_id, lease_expires_at: leaseExpires, updated_at: now }).where('id', '=', task.id).execute();
       await publishStateChange(redis, task.id, { task_id: task.id, from: 'OPEN', to: 'IN_PROGRESS', agent_id, timestamp: now });
 
@@ -62,7 +62,7 @@ export function registerTaskTools(server: any, db: Kysely<Database>, redis: any)
       if (!task) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: 'Task not found' }) }] };
       if (task.assigned_agent !== agent_id) return { content: [{ type: 'text' as const, text: JSON.stringify({ error: 'Not your task' }) }] };
 
-      const leaseExpires = new Date(Date.now() + LEASE_TTL_MS).toISOString();
+      const leaseExpires = leaseExpiresAt();
       await db.updateTable('tasks').set({ lease_expires_at: leaseExpires, updated_at: new Date().toISOString() }).where('id', '=', task_id).execute();
       return { content: [{ type: 'text' as const, text: JSON.stringify({ renewed: true, lease_expires_at: leaseExpires }) }] };
     }

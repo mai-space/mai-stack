@@ -7,6 +7,7 @@ import { projectRoutes } from './routes/projects.js';
 import { taskRoutes } from './routes/tasks.js';
 import { createMcpServer } from './mcp/server.js';
 import { registerMcpTransport } from './mcp/transport.js';
+import { startLeaseExpirySweep } from './services/lease.js';
 
 const PORT = parseInt(process.env.PORT ?? '3456', 10);
 const DB_PATH = process.env.DB_PATH ?? './mai.db';
@@ -32,10 +33,16 @@ async function main() {
   const mcpServer = createMcpServer(db, redis);
   registerMcpTransport(app, mcpServer);
 
+  const leaseSweep = startLeaseExpirySweep(db, redis);
+
   await app.listen({ port: PORT, host: '0.0.0.0' });
   console.log(`mai-project-mcp listening on port ${PORT}`);
 
-  const shutdown = async () => { await app.close(); process.exit(0); };
+  const shutdown = async () => {
+    clearInterval(leaseSweep);
+    await app.close();
+    process.exit(0);
+  };
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
