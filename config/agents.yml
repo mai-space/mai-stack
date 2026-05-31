@@ -2,40 +2,76 @@ agents:
   - id: claude
     type: claude-code
     model_provider: anthropic
-    model: claude-sonnet-4-6
+    model: claude-haiku-4-5
     task_types: [code, refactor, review, planning, architecture, hard-bugs]
     max_concurrent_tasks: 4
     project_affinity: [bgm-pulheim]
-    budget:
-      daily_usd: 10.00
-      per_task_usd: 1.00
     rate_limit:
       requests_per_minute: 10
       on_429: exponential_backoff
-      on_budget_90pct: graceful_shutdown
 
-  - id: opencode-deepseek
-    type: opencode
-    model_provider: opencode-go
-    model: deepseek-v4-pro
-    task_types: [code, refactor, hard-bugs, architecture]
-    max_concurrent_tasks: 6
+  - id: cursor-auto
+    type: cursor
+    model_provider: cursor
+    model: auto
+    task_types: [code, refactor, review, planning, architecture]
+    max_concurrent_tasks: 2
     project_affinity: [bgm-pulheim]
-    budget:
-      daily_usd: 5.00
     rate_limit:
-      requests_per_minute: 20
+      requests_per_minute: 10
+      on_429: exponential_backoff
+
+  - id: junie
+    type: junie
+    model_provider: jetbrains
+    model: default
+    task_types: [planning, architecture, review, code, refactor]
+    max_concurrent_tasks: 2
+    project_affinity: [bgm-pulheim]
+    rate_limit:
+      requests_per_minute: 10
       on_429: exponential_backoff
 
   - id: opencode-qwen
     type: opencode
     model_provider: opencode-go
     model: qwen3.5-plus
-    task_types: [boilerplate, docs, tests, code]
+    task_types: [boilerplate, docs, tests, code, refactor]
     max_concurrent_tasks: 6
     project_affinity: [bgm-pulheim]
-    budget:
-      daily_usd: 3.00
     rate_limit:
       requests_per_minute: 30
       on_429: sleep_30s
+
+  - id: opencode-deepseek-pro
+    type: opencode
+    model_provider: opencode-go
+    model: deepseek-v4-pro
+    task_types: [code, refactor, hard-bugs, architecture, planning]
+    max_concurrent_tasks: 4
+    project_affinity: [bgm-pulheim]
+    rate_limit:
+      requests_per_minute: 20
+      on_429: exponential_backoff
+
+  - id: opencode-deepseek-flash
+    type: opencode
+    model_provider: opencode-go
+    model: deepseek-v4-flash
+    task_types: [boilerplate, docs, tests, code, refactor]
+    max_concurrent_tasks: 8
+    project_affinity: [bgm-pulheim]
+    rate_limit:
+      requests_per_minute: 40
+      on_429: sleep_30s
+
+  - id: opencode-copilot-sonnet
+    type: opencode
+    model_provider: github-copilot
+    model: github-copilot/claude-sonnet-4.6
+    task_types: [code, refactor, review, planning, architecture, hard-bugs]
+    max_concurrent_tasks: 4
+    project_affinity: [bgm-pulheim]
+    rate_limit:
+      requests_per_minute: 10
+      on_429: exponential_backoff

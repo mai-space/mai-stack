@@ -7,7 +7,14 @@ projects:
       TYPO3 14 project with 28 extensions, developed via DDEV.
       Read AGENTS.md before any work. Custom extensions live under the
       mai_* namespace; prefer native TYPO3 APIs over third-party extensions.
-    allowed_agents: [claude, opencode-deepseek, opencode-qwen]
+    allowed_agents:
+      - claude
+      - cursor-auto
+      - junie
+      - opencode-qwen
+      - opencode-deepseek-pro
+      - opencode-deepseek-flash
+      - opencode-copilot-sonnet
     embedding:
       model: ollama:nomic-embed-text
       reindex_threshold_minutes: 15
