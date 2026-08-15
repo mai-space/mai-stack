@@ -5,6 +5,8 @@ import ProjectKanban from './pages/ProjectKanban.js';
 import EscalationQueue from './pages/EscalationQueue.js';
 import AgentActivity from './pages/AgentActivity.js';
 import DependencyGraph from './pages/DependencyGraph.js';
+import TaskJournal from './pages/TaskJournal.js';
+import RunnerStatus from './pages/RunnerStatus.js';
 import Login from './pages/Login.js';
 import { checkAuth, logout } from './api.js';
 
@@ -35,6 +37,7 @@ export default function App() {
         <NavLink to="/" end className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Overview</NavLink>
         <NavLink to="/escalations" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Escalations</NavLink>
         <NavLink to="/agents" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Agents</NavLink>
+        <NavLink to="/runner" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>Runner</NavLink>
         <span style={{ flex: 1 }} />
         <button className="btn-muted" style={{ fontSize: 12 }} onClick={() => void handleLogout()}>Logout</button>
       </nav>
@@ -44,6 +47,8 @@ export default function App() {
         <Route path="/graph/:id" element={<DependencyGraph />} />
         <Route path="/escalations" element={<EscalationQueue />} />
         <Route path="/agents" element={<AgentActivity />} />
+        <Route path="/runner" element={<RunnerStatus />} />
+        <Route path="/tasks/:id/journal" element={<TaskJournal />} />
       </Routes>
     </>
   );

@@ -117,6 +117,24 @@ services:
       timeout: 5s
       retries: 5
 
+  mai-journal:
+    build: ./mai-journal
+    restart: unless-stopped
+    environment:
+      PORT: 3462
+      DB_PATH: /data/journal.db
+      REDIS_URL: redis://redis:6379
+    volumes: [journal-db:/data]
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3462/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   mai-dispatcher:
     build: ./mai-dispatcher
     restart: unless-stopped
@@ -128,8 +146,12 @@ services:
       PROJECT_MCP_URL: http://mai-project-mcp:3456
       CODE_MCP_URL: http://mai-code-mcp:3457
       MEMORY_MCP_URL: http://mai-memory-mcp:3458
+      JOURNAL_URL: http://mai-journal:3462
       CONFIG_PATH: /config/agents.yml
       REINDEX_TIMEOUT_MS: ${REINDEX_TIMEOUT_MS:-30000}
+      # Off by default — same dev-mode bypass pattern as DASHBOARD_SECRET. Set true once
+      # mai-dispatcher is reachable from outside localhost (see M-6.md "Dispatcher: session auth").
+      DISPATCHER_AUTH_REQUIRED: ${DISPATCHER_AUTH_REQUIRED:-false}
     volumes:
       - ./config/agents.yml:/config/agents.yml:ro
       - ${WORKSPACES_PATH:-/tmp/workspaces}:/workspaces:ro
@@ -151,6 +173,45 @@ services:
       timeout: 5s
       retries: 5
 
+  mai-runner:
+    build: ./mai-runner
+    restart: unless-stopped
+    ports: ["3463:3463"]
+    environment:
+      PORT: 3463
+      REDIS_URL: redis://redis:6379
+      DISPATCHER_URL: http://mai-dispatcher:3460
+      JOURNAL_URL: http://mai-journal:3462
+      CONFIG_PATH: /config/agents.yml
+      PROJECTS_CONFIG_PATH: /config/projects.yml
+      RUNNER_MAX_GLOBAL_WORKTREES: ${RUNNER_MAX_GLOBAL_WORKTREES:-2}
+      RUNNER_POLL_INTERVAL_MS: ${RUNNER_POLL_INTERVAL_MS:-15000}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENCODE_ZEN_API_KEY: ${OPENCODE_ZEN_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes:
+      - ./config/agents.yml:/config/agents.yml:ro
+      - ./config/projects.yml:/config/projects.yml:ro
+      # rw — unlike every other service's :ro mount, mai-runner creates git worktrees here.
+      # runtime.type: ddev additionally needs Docker access, which this default compose file
+      # deliberately does NOT wire up — see M-6.md RISK 1 and docker-compose.prod.yml for the
+      # socket-proxy pattern before enabling ddev-backed projects.
+      - ${WORKSPACES_PATH:-/tmp/workspaces}:/workspaces
+    networks: [mai]
+    depends_on:
+      redis:
+        condition: service_healthy
+      mai-dispatcher:
+        condition: service_healthy
+      mai-journal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3463/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   mai-dashboard:
     build: ./mai-dashboard
     restart: unless-stopped
@@ -160,6 +221,8 @@ services:
       REGISTRY_URL: http://mai-registry:3459
       PROJECT_MCP_URL: http://mai-project-mcp:3456
       DISPATCHER_URL: http://mai-dispatcher:3460
+      JOURNAL_URL: http://mai-journal:3462
+      RUNNER_URL: http://mai-runner:3463
       REDIS_URL: redis://redis:6379
       DASHBOARD_SECRET: ${DASHBOARD_SECRET:-changeme}
     networks: [mai]
@@ -181,6 +244,7 @@ volumes:
   qdrant-data:
   registry-data:
   project-db:
+  journal-db:
 
 networks:
   mai:

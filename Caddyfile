@@ -1,0 +1,20 @@
+# Reverse proxy + automatic Let's Encrypt TLS for the root-server deployment.
+# Replace both domains and the email below, point their DNS A/AAAA records at the
+# server, then bring the stack up with:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Only mai-dashboard and mai-dispatcher are ever reachable from outside — every other
+# service stays on the internal `mai` Docker network (see docker-compose.prod.yml).
+
+{
+    email admin@example.com
+}
+
+dashboard.example.com {
+    reverse_proxy mai-dashboard:3461
+}
+
+mcp.example.com {
+    reverse_proxy mai-dispatcher:3460
+}

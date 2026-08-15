@@ -6,16 +6,72 @@ projects:
     system_prompt_override: |
       This project uses Remix with a Postgres backend.
       Always check db/schema.ts before touching any data layer.
-    allowed_agents: [cursor-claude, opencode-cheap]
+    allowed_agents: [cursor-claude, opencode-cheap, managed-anthropic-direct]
     embedding:
       model: ollama:nomic-embed-text
       reindex_threshold_minutes: 15
+    # ── M6 fields — read directly by mai-runner, ignored by mai-registry ────────
+    repo:
+      provider: github
+      full_name: my-org/app-a
+      base_branch: main
+    runtime:
+      type: node
+      max_parallel_worktrees: 2
+    quality_gates:
+      e2e:
+        enabled: true
+        tool: cypress
+        command: "npx cypress run"
+    pr_strategy: push-branch-only
 
   - id: app-b
     name: "App B"
     workspace: /workspaces/app-b
     agents_md: /workspaces/app-b/AGENTS.md
-    allowed_agents: [opencode-smart, junie]
+    allowed_agents: [opencode-smart, junie, managed-opencode-boilerplate]
     embedding:
       model: openai:text-embedding-3-small
       reindex_threshold_minutes: 30
+    repo:
+      provider: github
+      full_name: my-org/app-b
+      base_branch: main
+    runtime:
+      type: node
+      max_parallel_worktrees: 2
+    quality_gates:
+      e2e:
+        enabled: true
+        tool: playwright
+        command: "npx playwright test"
+    pr_strategy: open-pr
+
+  - id: legacy-erp
+    name: "Legacy ERP"
+    workspace: /workspaces/legacy-erp
+    agents_md: /workspaces/legacy-erp/AGENTS.md
+    allowed_agents: [managed-claude-php]
+    embedding:
+      model: ollama:nomic-embed-text
+      reindex_threshold_minutes: 15
+    repo:
+      provider: github
+      full_name: my-org/legacy-erp
+      base_branch: main
+    runtime:
+      type: ddev
+      max_parallel_worktrees: 2
+    quality_gates:
+      phpstan:
+        enabled: true
+        command: "phpstan analyse -c phpstan.neon --error-format=json"
+      rector:
+        enabled: true
+        mode: dry-run
+        command: "rector process --dry-run"
+      e2e:
+        enabled: true
+        tool: playwright
+        command: "npx playwright test"
+    pr_strategy: open-pr

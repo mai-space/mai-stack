@@ -3,6 +3,8 @@ import type { FastifyPluginAsync } from 'fastify';
 const REGISTRY_URL = process.env.REGISTRY_URL ?? 'http://mai-registry:3459';
 const PROJECT_MCP_URL = process.env.PROJECT_MCP_URL ?? 'http://mai-project-mcp:3456';
 const DISPATCHER_URL = process.env.DISPATCHER_URL ?? 'http://mai-dispatcher:3460';
+const JOURNAL_URL = process.env.JOURNAL_URL ?? 'http://mai-journal:3462';
+const RUNNER_URL = process.env.RUNNER_URL ?? 'http://mai-runner:3463';
 
 interface RegistryProject {
   id: string;
@@ -166,6 +168,38 @@ export const apiRoutes: FastifyPluginAsync = async (app) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
+
+  app.get<{ Params: { taskId: string } }>('/tasks/:taskId/journal', async (req, reply) => {
+    const { taskId } = req.params;
+    try {
+      const res = await fetch(`${JOURNAL_URL}/journal/${taskId}/entries`);
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
+
+  app.get('/runs', async (_req, reply) => {
+    try {
+      const res = await fetch(`${RUNNER_URL}/runs`);
+      const data: unknown = await res.json();
+      return reply.status(res.status).send(data);
+    } catch (err) {
+      return reply.status(502).send({ error: 'Upstream error', detail: String(err) });
+    }
+  });
+
+  app.post<{ Params: { taskId: string } }>('/runs/:taskId/kill', async (req, reply) => {
+    const { taskId } = req.params;
+    try {
+      const res = await fetch(`${RUNNER_URL}/runs/${taskId}/kill`, { method: 'POST' });
       const data: unknown = await res.json();
       return reply.status(res.status).send(data);
     } catch (err) {

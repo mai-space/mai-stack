@@ -1,4 +1,4 @@
-import type { ProjectSummary, Escalation, AgentStatus, Task } from './types.js';
+import type { ProjectSummary, Escalation, AgentStatus, Task, JournalEntry, ActiveRun } from './types.js';
 
 async function post<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(url, {
@@ -86,4 +86,20 @@ export function resumeAgent(agentId: string): Promise<{ resumed: boolean; previo
     `/api/agents/${agentId}/resume`,
     {}
   );
+}
+
+export async function fetchTaskJournal(taskId: string): Promise<JournalEntry[]> {
+  const res = await fetch(`/api/tasks/${taskId}/journal`);
+  if (!res.ok) throw new Error('Failed to fetch journal');
+  return res.json() as Promise<JournalEntry[]>;
+}
+
+export async function fetchActiveRuns(): Promise<ActiveRun[]> {
+  const res = await fetch('/api/runs');
+  if (!res.ok) throw new Error('Failed to fetch active runs');
+  return res.json() as Promise<ActiveRun[]>;
+}
+
+export function killRun(taskId: string): Promise<{ task_id: string; killed: boolean }> {
+  return post<{ task_id: string; killed: boolean }>(`/api/runs/${taskId}/kill`, {});
 }

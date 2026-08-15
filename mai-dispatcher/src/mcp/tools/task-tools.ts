@@ -22,6 +22,9 @@ interface Task {
   parent_task_id: string | null;
   assigned_agent: string | null;
   lease_expires_at: string | null;
+  blocker_type: string | null;
+  blocker_payload: string;
+  blocker_resolved_at: string | null;
   created_at: string;
 }
 

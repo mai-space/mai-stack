@@ -64,3 +64,31 @@ export interface AuthState {
   authenticated: boolean;
   loading: boolean;
 }
+
+export type JournalEntryKind =
+  | 'agent_started'
+  | 'agent_output'
+  | 'gate_result'
+  | 'agent_finished'
+  | 'run_complete'
+  | 'error'
+  | 'note';
+
+export interface JournalEntry {
+  id: number;
+  task_id: string;
+  project_id: string | null;
+  agent_id: string | null;
+  kind: JournalEntryKind;
+  payload: unknown;
+  created_at: string;
+}
+
+export interface ActiveRun {
+  taskId: string;
+  projectId: string;
+  agentId: string;
+  branch: string;
+  worktreePath: string;
+  startedAt: string;
+}

@@ -21,6 +21,7 @@ export default function TaskCard({ task }: Props) {
             <BlockerBadge type={task.blocker_type} severity={blocker.severity} />
           </Link>
         )}
+        <Link to={`/tasks/${task.id}/journal`} className="task-journal-link" title="View execution journal">journal</Link>
       </div>
     </div>
   );
