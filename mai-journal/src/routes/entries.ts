@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { randomUUID } from 'crypto';
 import type { Kysely } from 'kysely';
 import type { Database, JournalEntryKind } from '../db/schema.js';
 import { publishEntry } from '../redis.js';
@@ -35,21 +34,19 @@ export async function entryRoutes(app: FastifyInstance, db: Kysely<Database>, re
   app.post('/journal/:taskId/entries', async (req, reply) => {
     const { taskId } = req.params as { taskId: string };
     const body = AppendSchema.parse(req.body);
-    const id = randomUUID();
     const now = new Date().toISOString();
     const kind: JournalEntryKind = body.kind;
 
-    await db.insertInto('journal_entries').values({
-      id,
+    const row = await db.insertInto('journal_entries').values({
       task_id: taskId,
       project_id: body.project_id ?? null,
       agent_id: body.agent_id ?? null,
       kind,
       payload: JSON.stringify(body.payload ?? {}),
       created_at: now,
-    }).execute();
+    }).returningAll().executeTakeFirstOrThrow();
 
-    const entry = { id, task_id: taskId, project_id: body.project_id ?? null, agent_id: body.agent_id ?? null, kind, payload: body.payload ?? {}, created_at: now };
+    const entry = parseEntry(row);
     await publishEntry(redis, taskId, entry);
 
     return reply.status(201).send(entry);
@@ -58,13 +55,15 @@ export async function entryRoutes(app: FastifyInstance, db: Kysely<Database>, re
   app.get('/journal/:taskId/entries', async (req) => {
     const { taskId } = req.params as { taskId: string };
     const { since, limit } = z.object({
-      since: z.string().optional(),
+      // A monotonic id, not a timestamp — safe to use as a "give me everything after this" cursor
+      // even when multiple entries land in the same millisecond (e.g. streamed model output).
+      since: z.coerce.number().int().optional(),
       limit: z.coerce.number().int().min(1).max(1000).default(200),
     }).parse(req.query);
 
     let query = db.selectFrom('journal_entries').selectAll().where('task_id', '=', taskId);
-    if (since) query = query.where('id', '>', since);
-    const rows = await query.orderBy('created_at', 'asc').limit(limit).execute();
+    if (since !== undefined) query = query.where('id', '>', since);
+    const rows = await query.orderBy('id', 'asc').limit(limit).execute();
     return rows.map(parseEntry);
   });
 
@@ -77,7 +76,7 @@ export async function entryRoutes(app: FastifyInstance, db: Kysely<Database>, re
     const rows = await db.selectFrom('journal_entries')
       .selectAll()
       .where('project_id', '=', projectId)
-      .orderBy('created_at', 'desc')
+      .orderBy('id', 'desc')
       .limit(limit)
       .execute();
     return rows.map(parseEntry);

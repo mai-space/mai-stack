@@ -4,7 +4,7 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable('journal_entries')
     .ifNotExists()
-    .addColumn('id', 'text', (col) => col.primaryKey())
+    .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
     .addColumn('task_id', 'text', (col) => col.notNull())
     .addColumn('project_id', 'text')
     .addColumn('agent_id', 'text')

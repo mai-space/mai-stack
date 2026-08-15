@@ -75,7 +75,7 @@ export type JournalEntryKind =
   | 'note';
 
 export interface JournalEntry {
-  id: string;
+  id: number;
   task_id: string;
   project_id: string | null;
   agent_id: string | null;

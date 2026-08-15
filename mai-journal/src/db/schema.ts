@@ -1,3 +1,5 @@
+import type { Generated } from 'kysely';
+
 export type JournalEntryKind =
   | 'agent_started'
   | 'agent_output'
@@ -8,7 +10,9 @@ export type JournalEntryKind =
   | 'note';
 
 export interface JournalEntriesTable {
-  id: string;
+  // Auto-incrementing, not a UUID: entries are read back in insertion order (live-tail's
+  // `since` cursor relies on strict ordering, which a random id can't provide).
+  id: Generated<number>;
   task_id: string;
   project_id: string | null;
   agent_id: string | null;
