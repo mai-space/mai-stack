@@ -149,3 +149,32 @@ nav {
   height: 70vh; border: 1px solid var(--border); border-radius: 10px;
   overflow: hidden; background: var(--surface);
 }
+
+/* Task journal link on cards */
+.task-journal-link {
+  font-size: 10px; color: var(--muted); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Task journal page */
+.journal-list { display: flex; flex-direction: column; gap: 8px; }
+.journal-entry {
+  background: var(--surface); border: 1px solid var(--border); border-left-width: 3px;
+  border-radius: 8px; padding: 10px 14px;
+}
+.journal-entry-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.journal-kind {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.journal-agent { font-size: 11px; color: var(--primary); }
+.journal-time { font-size: 11px; color: var(--muted); margin-left: auto; }
+.journal-payload {
+  margin: 0; font-size: 12px; color: var(--text); white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 300px; overflow-y: auto;
+}
+.journal-kind-error { border-left-color: var(--danger); }
+.journal-kind-gate { border-left-color: var(--warning); }
+.journal-kind-complete { border-left-color: var(--success); }
+.journal-kind-started { border-left-color: var(--primary); }
+.journal-kind-default { border-left-color: var(--border); }

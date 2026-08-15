@@ -1,0 +1,22 @@
+# Install:
+#   sudo cp deploy/mai-stack.service /etc/systemd/system/mai-stack.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now mai-stack
+# Assumes the repo lives at /opt/mai-stack — edit WorkingDirectory below if not.
+
+[Unit]
+Description=mai-stack
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/opt/mai-stack
+ExecStart=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+ExecStop=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

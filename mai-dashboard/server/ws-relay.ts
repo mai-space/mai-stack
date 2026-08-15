@@ -31,8 +31,8 @@ export async function initRelay(): Promise<void> {
   const subscriber = createClient({ url });
   subscriber.on('error', (err) => console.error('[ws-relay] redis error:', err));
   await subscriber.connect();
-  await subscriber.pSubscribe(['task.*', 'project.*'], (message, channel) => {
+  await subscriber.pSubscribe(['task.*', 'project.*', 'journal.*'], (message, channel) => {
     broadcast(channel, message);
   });
-  console.log('[ws-relay] subscribed to Redis channels task.* and project.*');
+  console.log('[ws-relay] subscribed to Redis channels task.*, project.*, and journal.*');
 }
