@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache curl
 
@@ -12,7 +12,7 @@ RUN npm install
 COPY src/ ./src/
 RUN npx tsc --project tsconfig.json
 
-FROM node:20-alpine AS runtime
+FROM node:26-alpine AS runtime
 RUN apk add --no-cache curl
 WORKDIR /app
 ENV NODE_ENV=production
