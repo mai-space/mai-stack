@@ -123,3 +123,21 @@ agents:
     rate_limit:
       requests_per_minute: 20
       on_429: sleep_30s
+
+  - id: managed-junie
+    type: junie-cli                      # cli-family adapter — .junie/mcp/mcp.json, bridged via mcp-remote
+    mode: managed
+    model_provider: anthropic
+    model: claude-opus-5
+    task_types: [planning, architecture, review]
+    max_parallel_worktrees: 1
+    max_gate_retries: 3
+    cli:
+      command: junie
+      args: ["--brave=auto"]
+      timeout_minutes: 30
+    budget:
+      daily_usd: 10.00
+    rate_limit:
+      requests_per_minute: 5
+      on_budget_90pct: graceful_shutdown

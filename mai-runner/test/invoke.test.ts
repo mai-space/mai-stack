@@ -6,6 +6,7 @@ const EXPECTED_TYPES = [
   'codex-cli',
   'cursor-agent',
   'opencode-agent',
+  'junie-cli',
   'anthropic-api',
   'openai-api',
   'opencode-go-api',

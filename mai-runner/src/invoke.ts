@@ -3,6 +3,7 @@ import { createClaudeCliAdapter } from './adapters/claude-cli.js';
 import { createCodexCliAdapter } from './adapters/codex-cli.js';
 import { createCursorAgentAdapter } from './adapters/cursor-agent.js';
 import { createOpencodeAgentAdapter } from './adapters/opencode-agent.js';
+import { createJunieCliAdapter } from './adapters/junie-cli.js';
 import { createAnthropicApiAdapter } from './adapters/anthropic-api.js';
 import { createOpenAiApiAdapter } from './adapters/openai-api.js';
 import { createOpencodeGoApiAdapter } from './adapters/opencode-go-api.js';
@@ -19,6 +20,7 @@ const registry: Record<string, AdapterFactory> = {
   'codex-cli': createCodexCliAdapter,
   'cursor-agent': createCursorAgentAdapter,
   'opencode-agent': createOpencodeAgentAdapter,
+  'junie-cli': createJunieCliAdapter,
   'anthropic-api': createAnthropicApiAdapter,
   'openai-api': createOpenAiApiAdapter,
   'opencode-go-api': createOpencodeGoApiAdapter,
