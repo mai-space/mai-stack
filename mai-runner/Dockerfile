@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ curl
 
@@ -12,7 +12,7 @@ RUN npm ci
 COPY src/ ./src/
 RUN npx tsc --project tsconfig.json
 
-FROM node:20-alpine AS runtime
+FROM node:26-alpine AS runtime
 # git/bash: worktree + gate command execution. docker-cli: only needed if ddev runs inside
 # this container — see M-6.md RISK 1. Do NOT mount /var/run/docker.sock into this image
 # unproxied; front it with a socket proxy (e.g. tecnativa/docker-socket-proxy) or run
