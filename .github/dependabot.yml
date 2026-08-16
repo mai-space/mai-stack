@@ -1,0 +1,132 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mai-code-mcp
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-dashboard
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-dispatcher
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-journal
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-memory-mcp
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-project-mcp
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-registry
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-runner
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /mai-watcher
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directory: /mai-code-mcp
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-dashboard
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-dispatcher
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-journal
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-memory-mcp
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-project-mcp
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-registry
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-runner
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /mai-watcher
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
